@@ -1,12 +1,34 @@
 from django.shortcuts import render,redirect, get_object_or_404
 from .models import Task
 from django.contrib import messages
+from django.contrib.auth import authenticate , login, logout
+from django.contrib.auth.decorators import login_required
 # Create your views here.
 
+def login_views(request):
+    if request.method == "GET":
+        return render(request, 'login.html')
+    if request.method == "POST":
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username= username , password = password)
+        if user is not None:
+            login(request.user)
+            messages.success(request, "YOu are now logged in as" + username)
+            return redirect('myapp/task_list/')
+        else:
+            messages.error(request, "Invalid username or password")
+            return redirect('login')
+def logout_view(request):
+    logout(request)
+    return redirect('/login/')
+
+
 def task_list(request):
-    tasks = Task.objects.all()
+    tasks = Task.objects.all().order_by('-id')
     return render(request, 'task_list.html', {'tasks':tasks})
 
+@login_required(login_url="login")
 def task_create(request) : 
     if request.method == "POST" :
         title = request.POST.get('title')
@@ -33,18 +55,4 @@ def delete_task(request, task_id):
           return redirect('task_list')
      
      return render(request, 'delete_task.html', {'task: task'})
-
-# def edit_task(request, task_id): 
-    # task = get_object_or_404(Task, id = task_id, )
-
-    # if request.method == "POST":
-    #     task.is_completed = "True"
-    #     return redirect('task_list')
-    
-    # return render (request, 'complete_task.html', {'task: task'})
-# old version
-# def delete_task(request, task_id): 
-#         task = Task.objects.filter(task, id= task_id)
-#         task.delete()
-#         return redirect("/myapp/task_list/")
 
